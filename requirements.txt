@@ -1,0 +1,15 @@
+# minimal requirements (adjust versions as needed)
+# pandas and numpy for data handling
+# scikit-learn for preprocessing + ROC
+# stable-baselines3 for PPO
+# gym for environment
+# streamlit for UI
+
+pandas
+numpy
+scikit-learn
+stable-baselines3
+gym
+streamlit
+matplotlib
+joblib
