@@ -19,7 +19,7 @@ This project introduces a **self-learning NIDS** capable of:
 ## 🧠 Features
 - 🔍 **Attack detection**: DDoS, Port Scanning, Brute Force, Insider Threats  
 - ⚙️ **Reinforcement Learning (PPO)**: adaptive and self-improving defense agent  
-- 📊 **Data Preprocessing**: ARFF → CSV conversion, label encoding, MinMax normalization  
+- 📊 **Data Preprocessing**: label encoding, MinMax normalization  
 - 📉 **Dimensionality Reduction**: PCA for faster and cleaner model training  
 - 🧾 **Streamlit Dashboard**: for monitoring attack statistics and model predictions  
 - 💾 **Logging System**: stores attack logs and blocked IPs for later analysis  
