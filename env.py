@@ -5,64 +5,76 @@ from gymnasium.spaces import Discrete, Box
 class NetworkEnv(gym.Env):
     """
     Custom Gym environment for network intrusion detection.
-    Each sample is treated as one timestep.
+
+    One FULL episode = one full pass over the dataset.
     - observation: normalized feature vector
     - action: Discrete(2): 0=normal, 1=attack
-    - reward: +1 for correct prediction, -1 for incorrect
+    - reward: +1 correct, -1 incorrect
     """
 
-    metadata = {'render.modes': ['human']}
+    metadata = {"render_modes": ["human"]}
 
-    def __init__(self, X, y, episode_length=256, shuffle=True):
+    def __init__(self, X, y, shuffle=True):
         super().__init__()
         assert X.shape[0] == y.shape[0], "X and y must have same number of rows"
+
         self.X = X.astype(np.float32)
         self.y = y.astype(int)
         self.n_features = self.X.shape[1]
 
         self.action_space = Discrete(2)
-        self.observation_space = Box(low=0.0, high=1.0, shape=(self.n_features,), dtype=np.float32)
+        self.observation_space = Box(
+            low=0.0,
+            high=1.0,
+            shape=(self.n_features,),
+            dtype=np.float32
+        )
 
-        self.episode_length = int(episode_length)
         self.shuffle = bool(shuffle)
-        self._max_steps = min(self.episode_length, len(self.y))
+        self.dataset_size = len(self.y)
         self._rng = np.random.RandomState()
+
+        self.indices = None
+        self.pos = 0
 
     def reset(self, *, seed=None, options=None):
         if seed is not None:
             self._rng.seed(seed)
 
-        self.indices = np.arange(len(self.y))
+        self.indices = np.arange(self.dataset_size)
         if self.shuffle:
             self._rng.shuffle(self.indices)
 
         self.pos = 0
-        self.steps = 0
-        self.current_index = int(self.indices[self.pos])
-        obs = self.X[self.current_index]
+        idx = self.indices[self.pos]
+        obs = self.X[idx]
 
-        # Return observation and an empty info dictionary for compatibility
         return obs, {}
 
     def step(self, action):
-        true_label = int(self.y[self.current_index])
+        idx = self.indices[self.pos]
+        true_label = int(self.y[idx])
+
         reward = 1.0 if int(action) == true_label else -1.0
 
         self.pos += 1
-        self.steps += 1
-        terminated = self.steps >= self._max_steps
-        truncated = self.pos >= len(self.indices)
+        terminated = self.pos >= self.dataset_size
+        truncated = False
 
-        if not (terminated or truncated):
-            self.current_index = int(self.indices[self.pos])
-            obs = self.X[self.current_index]
+        if not terminated:
+            next_idx = self.indices[self.pos]
+            obs = self.X[next_idx]
         else:
             obs = np.zeros(self.n_features, dtype=np.float32)
 
-        info = {'true_label': true_label}
+        info = {
+            "true_label": true_label,
+            "dataset_pos": self.pos
+        }
+
         return obs, reward, terminated, truncated, info
 
-    def render(self, mode='human'):
+    def render(self):
         pass
 
     def close(self):
