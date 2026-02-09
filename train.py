@@ -27,7 +27,6 @@ def make_env_from_csv(csv_path, preprocessors_dir=None):
         X = df.drop(columns=[label_col]).values.astype(float)
         y = df[label_col].values.astype(int)
     
-    # فقط X و y رو به NetworkEnv میدیم
     env = NetworkEnv(X, y)
     return env
 
@@ -40,13 +39,12 @@ if __name__ == '__main__':
     parser.add_argument('--save', default='saved_models/ppo_detector', help="Path to save trained model")
     args = parser.parse_args()
 
-    # ساخت محیط
     env = make_env_from_csv(args.data, preprocessors_dir=args.preprocessors)
     vec_env = DummyVecEnv([lambda: env])
 
-    # آموزش مدل PPO
     model = PPO('MlpPolicy', vec_env, verbose=1)
     model.learn(total_timesteps=args.timesteps)
     model.save(args.save)
 
     print(f"✅ Saved model to {args.save}")
+
