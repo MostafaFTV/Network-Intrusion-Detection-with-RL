@@ -19,7 +19,7 @@ def get_action_probs_from_model(model, obs_batch):
     # Uses internal policy methods to get distribution
     obs_tensor = model.policy.obs_to_tensor(obs_batch)[0]
     dist = model.policy.get_distribution(obs_tensor)
-    # اضافه کردن detach() قبل از تبدیل به numpy
+
     probs = dist.distribution.probs.detach().cpu().numpy()
     return probs
 
@@ -48,22 +48,17 @@ if __name__ == '__main__':
 
     model = PPO.load(args.model)
 
-    # compute predicted probs
     probs = get_action_probs_from_model(model, X.astype(np.float32))
-    # predicted label = argmax
     y_pred = probs.argmax(axis=1)
 
-    # compute mean and std of step rewards by simulating episodes of length 1..
     rewards = (y_pred == y).astype(int) * 1 + (y_pred != y).astype(int) * -1
     mean_reward = rewards.mean()
     std_reward = rewards.std()
     print(f"Mean reward: {mean_reward:.4f}, Std reward: {std_reward:.4f}")
 
-    # ROC curve (use probability of class 1)
     if probs.shape[1] >= 2:
         scores = probs[:, 1]
     else:
-        # fallback: scores are just predicted labels (coarse)
         scores = y_pred
 
     fpr, tpr, _ = roc_curve(y, scores)
@@ -77,4 +72,5 @@ if __name__ == '__main__':
     plt.title('ROC curve')
     plt.legend(loc='lower right')
     plt.savefig(args.plot)
+
     print(f"ROC plot saved to {args.plot}")
