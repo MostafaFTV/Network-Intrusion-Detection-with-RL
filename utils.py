@@ -35,11 +35,10 @@ def load_preprocessors(out_dir):
 
 
 def detect_label_column(df, given_label=None):
-    # If user provided, use it. Otherwise use heuristics: 'label' or last column
     if given_label is not None and given_label in df.columns:
         return given_label
     for cand in ["label", "Label", "target", "class"]:
         if cand in df.columns:
             return cand
-    # fallback: last column
+
     return df.columns[-1]
