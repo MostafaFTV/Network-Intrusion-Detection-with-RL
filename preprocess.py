@@ -27,7 +27,6 @@ def preprocess_dataframe(df, label_col=None):
     y = df[label_col].copy()
     X = df.drop(columns=[label_col]).copy()
 
-    # Encode textual features in X
     encoders = {}
     for col in X.select_dtypes(include=[object, 'category']).columns:
         le = LabelEncoder()
@@ -35,8 +34,6 @@ def preprocess_dataframe(df, label_col=None):
         encoders[col] = le
         print(f"Encoded column {col} -> classes={list(le.classes_)[:6]}{'...' if len(le.classes_)>6 else ''}")
 
-    # Process target y --> binary 0/1 if possible
-        # Process target y --> binary 0/1 if possible
     label_encoder = None
     if y.dtype == object or y.dtype.name == 'category':
         lowers = y.astype(str).str.lower()
@@ -45,18 +42,16 @@ def preprocess_dataframe(df, label_col=None):
             print("Detected 'normal' class in labels — mapping 'normal'->0 and others->1")
             y_bin = (lowers != 'normal').astype(int)
             label_encoder = LabelEncoder()
-            label_encoder.fit(['normal', 'attack'])  # یا هر کلاس‌هایی که داری
+            label_encoder.fit(['normal', 'attack'])  
         else:
             print("Label column is non-numeric and does not contain 'normal' — applying LabelEncoder")
             label_encoder = LabelEncoder()
 
-            # ✅ اضافه کردن کلاس‌های دیده نشده
             all_classes = np.unique(y.astype(str))
             label_encoder.fit(all_classes)
 
             y_bin = label_encoder.transform(y.astype(str))
     else:
-        # numeric labels; try to make binary (0/1) if possible
         if set(np.unique(y)) <= {0, 1}:
             y_bin = y.astype(int)
         else:
@@ -64,7 +59,6 @@ def preprocess_dataframe(df, label_col=None):
             y_bin = y
 
 
-    # Scale features
     scaler = MinMaxScaler()
     X_scaled = scaler.fit_transform(X.values)
 
@@ -104,4 +98,5 @@ if __name__ == '__main__':
         print(f"Wrote processed CSV to {args.output}")
 
     print("Preprocessing done. Preprocessors saved to:", args.outdir)
+
 
