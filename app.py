@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 from sklearn.exceptions import UndefinedMetricWarning
 from stable_baselines3 import PPO
-from utils import load_preprocessors  # ماژول پیش‌پردازش فرض بر این است که موجود است
+from utils import load_preprocessors  
 import warnings
 
 @st.cache_resource
@@ -33,36 +33,30 @@ def main():
         st.write("Raw data preview:")
         st.dataframe(df.head())
 
-        # بارگذاری مدل و پیش‌پردازنده‌ها
         model, scaler, encs, le, meta = load_model_and_preprocessors(
             'saved_models/ppo_detector.zip',
             'saved_models/preprocessors'
         )
 
-        # پیش‌پردازش ویژگی‌های متنی
         for col, encoder in encs.items():
             if col in df.columns:
                 df[col] = encoder.transform(df[col].astype(str))
 
-        # استخراج ویژگی‌ها و نرمال‌سازی
         X = df[meta['feature_names']].values.astype(float)
         X = scaler.transform(X)
 
-        # تبدیل برچسب‌ها: normal -> 0 ، هر چیز دیگه -> 1
         if meta['label_col'] in df.columns:
             y_true = df[meta['label_col']].astype(str).apply(lambda x: 0 if x.lower() == "normal" else 1).values
         else:
             st.error(f"Label column '{meta['label_col']}' not found in uploaded data.")
             return
 
-        # پیش‌بینی با مدل PPO
         obs = X.astype(np.float32)
         obs_tensor = model.policy.obs_to_tensor(obs)[0]
         dist = model.policy.get_distribution(obs_tensor)
         probs = dist.distribution.probs.detach().cpu().numpy()
         y_pred = probs.argmax(axis=1)
 
-        # نمایش نتایج
         st.write("Prediction Results:")
         results_df = pd.DataFrame({
             'True Label': y_true,
@@ -70,12 +64,10 @@ def main():
         })
         st.dataframe(results_df)
 
-        # محاسبه پاداش‌ها
         rewards = (y_pred == y_true).astype(int) * 1 + (y_pred != y_true).astype(int) * -1
         st.write(f"Mean reward: {rewards.mean():.4f}")
         st.write(f"Std reward: {rewards.std():.4f}")
 
-        # نمایش نتایج به صورت مرتب و تمیز
         st.write("### Model Evaluation Results")
         st.write(f"**Mean Reward:** {rewards.mean():.4f}")
         st.write(f"**Std Reward:** {rewards.std():.4f}")
@@ -94,29 +86,23 @@ def main():
         st.write("**Distribution in y_pred:**")
         st.json(distribution_y_pred)
 
-        # رسم نمودار ROC
         if probs.shape[1] >= 2:
             scores = probs[:, 1]
         else:
             scores = y_pred
-        # محاسبه AUC
         if len(set(y_true)) < 2:
             st.warning("AUC cannot be calculated because y_true contains only one class.")
         else:
-            # بررسی مقادیر y_true و y_pred
             st.write(f"y_true: {y_true}")
             st.write(f"y_pred: {y_pred}")
 
-            # بررسی کلاس‌های شناسایی‌شده توسط LabelEncoder
             if le is not None:
                 st.write(f"Classes in LabelEncoder: {le.classes_}")
             else:
                 st.error("LabelEncoder is not initialized.")
 
-            # بررسی مقادیر y_true
             st.write(f"Unique classes in y_true: {set(y_true)}")
 
-            # بررسی توزیع کلاس‌ها در y_true و y_pred
             unique, counts = np.unique(y_true, return_counts=True)
             st.write(f"Distribution in y_true: {dict(zip(unique, counts))}")
 
@@ -139,3 +125,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
